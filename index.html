@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPN Mini App</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Telegram Mini Apps -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="header">
+        <div>
+            <p class="small-text">خوش آمدید</p>
+            <h2 id="username">کاربر تلگرام</h2>
+        </div>
+
+        <div class="avatar" id="avatar">👤</div>
+    </header>
+
+
+    <section class="subscription-card">
+
+        <div class="status-row">
+            <span>وضعیت سرویس</span>
+            <span class="status active">فعال</span>
+        </div>
+
+        <h1>VPN Premium</h1>
+
+        <div class="info-grid">
+
+            <div>
+                <span>حجم باقی‌مانده</span>
+                <strong>38 GB</strong>
+            </div>
+
+            <div>
+                <span>روز باقی‌مانده</span>
+                <strong>21 روز</strong>
+            </div>
+
+        </div>
+
+        <button class="main-button" onclick="showConnection()">
+            دریافت اتصال
+        </button>
+
+    </section>
+
+
+    <h3 class="section-title">خرید سرویس</h3>
+
+
+    <section class="plans">
+
+        <div class="plan">
+            <h3>پلن اقتصادی</h3>
+
+            <div class="plan-info">
+                <span>30 روز</span>
+                <span>30 GB</span>
+            </div>
+
+            <h2>3.99$</h2>
+
+            <button onclick="buyPlan('اقتصادی', '3.99')">
+                خرید
+            </button>
+        </div>
+
+
+        <div class="plan popular">
+
+            <div class="badge">پیشنهادی</div>
+
+            <h3>پلن حرفه‌ای</h3>
+
+            <div class="plan-info">
+                <span>30 روز</span>
+                <span>100 GB</span>
+            </div>
+
+            <h2>6.99$</h2>
+
+            <button onclick="buyPlan('حرفه‌ای', '6.99')">
+                خرید
+            </button>
+
+        </div>
+
+
+        <div class="plan">
+
+            <h3>پلن نامحدود</h3>
+
+            <div class="plan-info">
+                <span>30 روز</span>
+                <span>نامحدود</span>
+            </div>
+
+            <h2>9.99$</h2>
+
+            <button onclick="buyPlan('نامحدود', '9.99')">
+                خرید
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <section id="connectionBox" class="connection-box hidden">
+
+        <h3>اطلاعات اتصال</h3>
+
+        <p>
+            لینک اتصال شما:
+        </p>
+
+        <div class="vpn-link">
+            <span id="vpnLink">
+                vless://example-vpn-config
+            </span>
+        </div>
+
+        <button onclick="copyVPN()">
+            کپی لینک
+        </button>
+
+    </section>
+
+
+    <nav class="bottom-nav">
+
+        <button class="nav-item active-nav">
+            <span>⌂</span>
+            خانه
+        </button>
+
+        <button class="nav-item">
+            <span>▣</span>
+            سرویس‌ها
+        </button>
+
+        <button class="nav-item">
+            <span>👤</span>
+            حساب
+        </button>
+
+    </nav>
+
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>

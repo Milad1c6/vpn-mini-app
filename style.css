@@ -1,0 +1,371 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Tahoma, sans-serif;
+    background: #0d1117;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+button {
+    font-family: inherit;
+}
+
+.app {
+    max-width: 500px;
+    margin: auto;
+    padding: 22px 16px 100px;
+}
+
+
+/* Header */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.small-text {
+    color: #8b949e;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.header h2 {
+    font-size: 20px;
+}
+
+.avatar {
+    width: 45px;
+    height: 45px;
+
+    background: #21262d;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+}
+
+
+/* Subscription */
+
+.subscription-card {
+    background: linear-gradient(
+        135deg,
+        #161b22,
+        #1f2937
+    );
+
+    border: 1px solid #30363d;
+
+    border-radius: 20px;
+
+    padding: 20px;
+
+    margin-bottom: 30px;
+}
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+
+    color: #8b949e;
+
+    font-size: 13px;
+
+    margin-bottom: 18px;
+}
+
+.status {
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+
+.active {
+    color: #3fb950;
+    background: rgba(63, 185, 80, 0.12);
+}
+
+.subscription-card h1 {
+    font-size: 25px;
+    margin-bottom: 20px;
+}
+
+
+/* Information */
+
+.info-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.info-grid div {
+    background: #0d1117;
+
+    padding: 14px;
+
+    border-radius: 12px;
+}
+
+.info-grid span {
+    display: block;
+
+    color: #8b949e;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+.info-grid strong {
+    font-size: 17px;
+}
+
+
+/* Main button */
+
+.main-button {
+    width: 100%;
+
+    border: none;
+
+    background: #238636;
+
+    color: white;
+
+    padding: 14px;
+
+    border-radius: 12px;
+
+    font-size: 15px;
+
+    cursor: pointer;
+}
+
+.main-button:active {
+    transform: scale(0.98);
+}
+
+
+/* Plans */
+
+.section-title {
+    margin-bottom: 15px;
+}
+
+.plans {
+    display: grid;
+    gap: 15px;
+}
+
+.plan {
+    position: relative;
+
+    background: #161b22;
+
+    border: 1px solid #30363d;
+
+    padding: 18px;
+
+    border-radius: 18px;
+}
+
+.plan h3 {
+    margin-bottom: 15px;
+}
+
+.plan-info {
+    display: flex;
+
+    gap: 10px;
+
+    margin-bottom: 15px;
+}
+
+.plan-info span {
+    background: #21262d;
+
+    color: #c9d1d9;
+
+    padding: 7px 10px;
+
+    border-radius: 8px;
+
+    font-size: 12px;
+}
+
+.plan h2 {
+    margin-bottom: 15px;
+}
+
+.plan button {
+    width: 100%;
+
+    border: none;
+
+    background: #21262d;
+
+    color: white;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+}
+
+.popular {
+    border: 1px solid #238636;
+}
+
+.popular button {
+    background: #238636;
+}
+
+.badge {
+    position: absolute;
+
+    left: 15px;
+    top: 15px;
+
+    background: #238636;
+
+    padding: 5px 9px;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+}
+
+
+/* Connection */
+
+.connection-box {
+    margin-top: 25px;
+
+    padding: 18px;
+
+    background: #161b22;
+
+    border: 1px solid #30363d;
+
+    border-radius: 18px;
+}
+
+.connection-box h3 {
+    margin-bottom: 15px;
+}
+
+.connection-box p {
+    color: #8b949e;
+
+    font-size: 13px;
+
+    margin-bottom: 10px;
+}
+
+.vpn-link {
+    background: #0d1117;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    margin-bottom: 10px;
+}
+
+.vpn-link span {
+    font-size: 12px;
+
+    white-space: nowrap;
+}
+
+.connection-box button {
+    width: 100%;
+
+    border: none;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    background: #238636;
+
+    color: white;
+
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+
+/* Bottom navigation */
+
+.bottom-nav {
+    position: fixed;
+
+    bottom: 0;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    width: 100%;
+
+    max-width: 500px;
+
+    height: 72px;
+
+    background: rgba(22, 27, 34, 0.96);
+
+    border-top: 1px solid #30363d;
+
+    display: flex;
+
+    justify-content: space-around;
+
+    align-items: center;
+}
+
+.nav-item {
+    background: none;
+
+    border: none;
+
+    color: #8b949e;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 5px;
+
+    cursor: pointer;
+}
+
+.nav-item span {
+    font-size: 20px;
+}
+
+.active-nav {
+    color: #3fb950;
+}
