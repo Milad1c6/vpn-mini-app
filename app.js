@@ -1,20 +1,29 @@
 const tg = window.Telegram?.WebApp;
 
-if (tg) {
+const isTelegram =
+    tg &&
+    tg.initData &&
+    tg.initData.length > 0;
+
+
+// Telegram Mini App
+if (isTelegram) {
     tg.ready();
     tg.expand();
 
     const user = tg.initDataUnsafe?.user;
 
     if (user) {
-        const usernameElement = document.getElementById("username");
+        const usernameElement =
+            document.getElementById("username");
 
         usernameElement.textContent =
             user.first_name ||
             user.username ||
             "کاربر تلگرام";
 
-        const avatar = document.getElementById("avatar");
+        const avatar =
+            document.getElementById("avatar");
 
         if (user.first_name) {
             avatar.textContent =
@@ -32,7 +41,6 @@ function showConnection() {
         document.getElementById("connectionBox");
 
     box.classList.toggle("hidden");
-
 }
 
 
@@ -43,7 +51,8 @@ function buyPlan(planName, price) {
     const message =
         `پلن ${planName} با قیمت ${price}$ انتخاب شد.`;
 
-    if (tg) {
+    // داخل Telegram
+    if (isTelegram) {
 
         tg.showPopup({
             title: "خرید سرویس",
@@ -56,12 +65,14 @@ function buyPlan(planName, price) {
             ]
         });
 
-    } else {
+    }
+
+    // داخل مرورگر معمولی
+    else {
 
         alert(message);
 
     }
-
 }
 
 
@@ -78,7 +89,7 @@ async function copyVPN() {
 
         await navigator.clipboard.writeText(vpnLink);
 
-        if (tg) {
+        if (isTelegram) {
 
             tg.showAlert(
                 "لینک اتصال کپی شد."
@@ -100,5 +111,4 @@ async function copyVPN() {
         );
 
     }
-
 }
