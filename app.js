@@ -1,58 +1,49 @@
 const tg = window.Telegram?.WebApp;
 
-// آدرس API
-const API_URL = "http://YOUR_SERVER_IP:8000";
+const API_URL = "http://213.176.121.102:8000";
 
-let currentUser = null;
-let plans = [];
-let services = [];
-let orders = [];
+const isTelegram =
+    !!(tg && tg.initData && tg.initData.length > 0);
 
 
-// =====================================================
+// ===============================
 // Telegram
-// =====================================================
+// ===============================
 
-function initTelegram() {
-    if (!tg) {
-        console.warn("Telegram WebApp is not available.");
-        return;
-    }
-
+if (tg) {
     tg.ready();
     tg.expand();
 }
 
 
-// =====================================================
+// ===============================
 // API
-// =====================================================
+// ===============================
 
 async function apiRequest(endpoint, options = {}) {
 
-    if (!tg?.initData) {
-        throw new Error("Telegram authentication data not available.");
+    if (!isTelegram) {
+        throw new Error(
+            "Mini App را از داخل Telegram باز کنید."
+        );
     }
+
+    const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+    };
+
+    headers["Authorization"] = `tma ${tg.initData}`;
 
     const response = await fetch(
         `${API_URL}${endpoint}`,
         {
             ...options,
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `tma ${tg.initData}`,
-                ...(options.headers || {})
-            }
+            headers
         }
     );
 
-    let data;
-
-    try {
-        data = await response.json();
-    } catch {
-        throw new Error("Invalid API response.");
-    }
+    const data = await response.json();
 
     if (!response.ok) {
         throw new Error(
@@ -64,87 +55,95 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 
-// =====================================================
+// ===============================
 // User
-// =====================================================
+// ===============================
 
 async function loadUser() {
 
     try {
 
-        const data = await apiRequest("/api/me");
+        const data =
+            await apiRequest("/api/me");
 
-        currentUser = data.user;
+        const user =
+            data.user || data;
 
-        const usernameElement =
+        const username =
             document.getElementById("username");
 
-        if (usernameElement) {
-            usernameElement.textContent =
-                currentUser.first_name ||
-                currentUser.username ||
-                "کاربر";
+        if (username) {
+            username.textContent =
+                user.first_name ||
+                user.username ||
+                "کاربر تلگرام";
         }
 
-        const balanceElement =
-            document.getElementById("balance");
+        const avatar =
+            document.getElementById("avatar");
 
-        if (balanceElement) {
-            balanceElement.textContent =
-                formatPrice(currentUser.balance);
+        if (avatar && user.first_name) {
+            avatar.textContent =
+                user.first_name.charAt(0).toUpperCase();
         }
 
-        const servicesElement =
-            document.getElementById("servicesCount");
-
-        if (servicesElement) {
-            servicesElement.textContent =
-                data.active_services;
-        }
+        updateAccountInfo(user);
 
     } catch (error) {
 
-        console.error("User loading error:", error);
-
-        showError(error.message);
+        console.error(
+            "User loading error:",
+            error
+        );
     }
 }
 
 
-// =====================================================
+// ===============================
 // Plans
-// =====================================================
+// ===============================
 
-async function loadPlans(category = null) {
+async function loadPlans() {
 
     try {
 
-        const endpoint =
-            category
-                ? `/api/plans?category=${encodeURIComponent(category)}`
-                : "/api/plans";
-
         const data =
-            await apiRequest(endpoint);
+            await apiRequest("/api/plans");
 
-        plans = data.plans;
+        const plans =
+            Array.isArray(data)
+                ? data
+                : (data.plans || []);
 
-        renderPlans();
+        renderPlans(plans);
 
     } catch (error) {
 
-        console.error("Plans loading error:", error);
+        console.error(
+            "Plans loading error:",
+            error
+        );
 
-        showError(error.message);
+        const container =
+            document.getElementById("plans");
+
+        if (container) {
+            container.innerHTML = `
+                <div class="plan">
+                    <h3>خطا در دریافت پلن‌ها</h3>
+                    <p>${escapeHTML(error.message)}</p>
+                </div>
+            `;
+        }
     }
 }
 
 
-// =====================================================
-// Render plans
-// =====================================================
+// ===============================
+// Render Plans
+// ===============================
 
-function renderPlans() {
+function renderPlans(plans) {
 
     const container =
         document.getElementById("plans");
@@ -157,153 +156,237 @@ function renderPlans() {
 
     if (!plans.length) {
 
-        container.innerHTML =
-            `<div class="empty">
-                پلن فعالی وجود ندارد.
-            </div>`;
+        container.innerHTML = `
+            <div class="plan">
+                <h3>پلنی موجود نیست</h3>
+            </div>
+        `;
 
         return;
     }
 
-    plans.forEach(plan => {
+    plans.forEach((plan, index) => {
+
+        const name =
+            plan.name ||
+            plan.title ||
+            "پلن";
+
+        const price =
+            plan.price ?? 0;
+
+        const days =
+            plan.days ??
+            plan.duration_days ??
+            "-";
+
+        const dataGB =
+            plan.data_gb ??
+            plan.volume_gb ??
+            plan.volume ??
+            "نامحدود";
 
         const card =
             document.createElement("div");
 
-        card.className = "plan-card";
-
-        const dataText =
-            Number(plan.data_gb) === 0
-                ? "نامحدود"
-                : `${plan.data_gb} گیگ`;
+        card.className =
+            index === 1
+                ? "plan popular"
+                : "plan";
 
         card.innerHTML = `
-            <div class="plan-title">
-                ${escapeHTML(plan.name)}
-            </div>
+
+            ${
+                index === 1
+                    ? `<div class="badge">پیشنهادی</div>`
+                    : ""
+            }
+
+            <h3>
+                ${escapeHTML(name)}
+            </h3>
 
             <div class="plan-info">
-                حجم: ${escapeHTML(dataText)}
+                <span>
+                    ${escapeHTML(String(days))} روز
+                </span>
+
+                <span>
+                    ${escapeHTML(String(dataGB))}
+                </span>
             </div>
 
-            <div class="plan-info">
-                مدت: ${plan.days} روز
-            </div>
+            <h2>
+                ${formatPrice(price)}
+            </h2>
 
-            <div class="plan-price">
-                ${formatPrice(plan.price)} تومان
-            </div>
-
-            <button
-                class="buy-button"
-                onclick="buyPlan(${plan.id})">
+            <button>
                 خرید
             </button>
         `;
+
+        const button =
+            card.querySelector("button");
+
+        button.addEventListener(
+            "click",
+            () => buyPlan(plan)
+        );
 
         container.appendChild(card);
     });
 }
 
 
-// =====================================================
+// ===============================
 // Buy
-// =====================================================
+// ===============================
 
-async function buyPlan(planId) {
+function buyPlan(plan) {
 
-    const plan =
-        plans.find(
-            item => Number(item.id) === Number(planId)
-        );
+    const name =
+        plan.name ||
+        plan.title ||
+        "پلن";
 
-    if (!plan) {
-
-        showError("پلن پیدا نشد.");
-
-        return;
-    }
+    const price =
+        plan.price ?? 0;
 
     const message =
-        `پلن ${plan.name}\n` +
-        `قیمت: ${formatPrice(plan.price)} تومان`;
+        `پلن ${name}\n` +
+        `قیمت: ${formatPrice(price)}`;
 
-    if (tg) {
+    // showPopup را استفاده نمی‌کنیم
+    // چون نسخه Telegram WebApp فعلی آن را پشتیبانی نمی‌کند.
 
-        tg.showPopup(
-            {
-                title: "خرید سرویس",
-                message: message,
-                buttons: [
-                    {
-                        id: "confirm",
-                        type: "default",
-                        text: "ادامه خرید"
-                    },
-                    {
-                        id: "cancel",
-                        type: "cancel",
-                        text: "انصراف"
-                    }
-                ]
-            },
-            async function(buttonId) {
+    if (confirm(`${message}\n\nادامه خرید؟`)) {
 
-                if (buttonId === "confirm") {
-                    await startOrder(plan);
-                }
+        createOrder(plan);
 
-            }
-        );
-
-    } else {
-
-        const confirmed =
-            confirm(message + "\n\nادامه خرید؟");
-
-        if (confirmed) {
-            await startOrder(plan);
-        }
     }
 }
 
 
-// =====================================================
-// Start order
-// =====================================================
+// ===============================
+// Create Order
+// ===============================
 
-async function startOrder(plan) {
+async function createOrder(plan) {
 
-    /*
-     * این قسمت فعلاً سفارش را در دیتابیس ایجاد نمی‌کند.
-     *
-     * دلیل:
-     * API فعلی فقط endpointهای خواندن اطلاعات را دارد.
-     * خرید واقعی باید همان منطق پرداخت bot.py را اجرا کند
-     * تا پرداخت و ساخت سرویس دور زده نشود.
-     */
+    try {
 
-    showError(
-        "سیستم خرید واقعی هنوز در API فعال نشده است."
-    );
+        /*
+         * Endpoint خرید باید در server.py وجود داشته باشد.
+         * اگر وجود نداشته باشد، این قسمت خطای 404 می‌دهد
+         * و bot.py هنوز تغییری نمی‌کند.
+         */
+
+        const data =
+            await apiRequest(
+                "/api/orders",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        plan_id: plan.id
+                    })
+                }
+            );
+
+        if (data.payment_url) {
+
+            window.open(
+                data.payment_url,
+                "_blank"
+            );
+
+            return;
+        }
+
+        if (data.url) {
+
+            window.open(
+                data.url,
+                "_blank"
+            );
+
+            return;
+        }
+
+        showMessage(
+            "سفارش با موفقیت ایجاد شد."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Order error:",
+            error
+        );
+
+        showMessage(
+            error.message
+        );
+    }
 }
 
 
-// =====================================================
+// ===============================
 // Services
-// =====================================================
+// ===============================
 
 async function loadServices() {
 
     try {
 
         const data =
-            await apiRequest("/api/services");
+            await apiRequest(
+                "/api/services"
+            );
 
-        services =
-            data.services;
+        const services =
+            Array.isArray(data)
+                ? data
+                : (data.services || []);
 
-        renderServices();
+        renderServices(services);
+
+        if (services.length > 0) {
+
+            const service =
+                services[0];
+
+            const vpnLink =
+                service.subscription_url ||
+                service.vpn_link ||
+                service.link;
+
+            if (vpnLink) {
+                setVPNLink(vpnLink);
+            }
+
+            const volume =
+                document.querySelector(
+                    ".info-grid div:nth-child(1) strong"
+                );
+
+            if (volume) {
+                volume.textContent =
+                    service.data_remaining ??
+                    service.remaining_gb ??
+                    "-";
+            }
+
+            const days =
+                document.querySelector(
+                    ".info-grid div:nth-child(2) strong"
+                );
+
+            if (days) {
+                days.textContent =
+                    service.days_remaining ??
+                    "-";
+            }
+        }
 
     } catch (error) {
 
@@ -311,150 +394,93 @@ async function loadServices() {
             "Services loading error:",
             error
         );
-
-        showError(error.message);
     }
 }
 
 
-function renderServices() {
-
-    const container =
-        document.getElementById("services");
-
-    if (!container) {
-        return;
-    }
-
-    container.innerHTML = "";
+function renderServices(services) {
 
     if (!services.length) {
-
-        container.innerHTML =
-            `<div class="empty">
-                هنوز سرویسی ندارید.
-            </div>`;
-
         return;
     }
 
-    services.forEach(service => {
+    const service =
+        services[0];
 
-        const card =
-            document.createElement("div");
+    const vpnLink =
+        service.subscription_url ||
+        service.vpn_link ||
+        service.link;
 
-        card.className = "service-card";
-
-        card.innerHTML = `
-            <div>
-                <strong>
-                    ${escapeHTML(service.username)}
-                </strong>
-            </div>
-
-            <button
-                onclick="copyVPN('${escapeAttribute(service.subscription_url)}')">
-                کپی لینک
-            </button>
-        `;
-
-        container.appendChild(card);
-    });
+    if (vpnLink) {
+        setVPNLink(vpnLink);
+    }
 }
 
 
-// =====================================================
-// Orders
-// =====================================================
+// ===============================
+// Connection
+// ===============================
 
-async function loadOrders() {
+function showConnection() {
 
-    try {
-
-        const data =
-            await apiRequest("/api/orders");
-
-        orders =
-            data.orders;
-
-        renderOrders();
-
-    } catch (error) {
-
-        console.error(
-            "Orders loading error:",
-            error
+    const box =
+        document.getElementById(
+            "connectionBox"
         );
 
-        showError(error.message);
-    }
-}
-
-
-function renderOrders() {
-
-    const container =
-        document.getElementById("orders");
-
-    if (!container) {
+    if (!box) {
         return;
     }
 
-    container.innerHTML = "";
+    box.classList.toggle("hidden");
 
-    if (!orders.length) {
-
-        container.innerHTML =
-            `<div class="empty">
-                سفارشی وجود ندارد.
-            </div>`;
-
-        return;
-    }
-
-    orders.forEach(order => {
-
-        const item =
-            document.createElement("div");
-
-        item.className = "order-item";
-
-        item.innerHTML = `
-            <strong>
-                ${escapeHTML(order.plan_name)}
-            </strong>
-
-            <div>
-                مبلغ:
-                ${formatPrice(order.price)}
-                تومان
-            </div>
-
-            <div>
-                وضعیت:
-                ${escapeHTML(order.status)}
-            </div>
-
-            <div>
-                ${escapeHTML(order.created_at || "")}
-            </div>
-        `;
-
-        container.appendChild(item);
-    });
+    loadServices();
 }
 
 
-// =====================================================
+// ===============================
+// Set VPN link
+// ===============================
+
+function setVPNLink(link) {
+
+    const element =
+        document.getElementById(
+            "vpnLink"
+        );
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent = link;
+}
+
+
+// ===============================
 // Copy VPN
-// =====================================================
+// ===============================
 
-async function copyVPN(link) {
+async function copyVPN() {
 
-    if (!link) {
+    const element =
+        document.getElementById(
+            "vpnLink"
+        );
 
-        showError(
-            "لینک سرویس موجود نیست."
+    if (!element) {
+        return;
+    }
+
+    const vpnLink =
+        element.innerText.trim();
+
+    if (!vpnLink ||
+        vpnLink.includes("example-vpn-config")) {
+
+        showMessage(
+            "هنوز سرویس فعالی برای شما وجود ندارد."
         );
 
         return;
@@ -462,92 +488,70 @@ async function copyVPN(link) {
 
     try {
 
-        await navigator.clipboard.writeText(link);
+        await navigator.clipboard.writeText(
+            vpnLink
+        );
 
-        if (tg) {
-
-            tg.showAlert(
-                "لینک اتصال کپی شد."
-            );
-
-        } else {
-
-            alert(
-                "لینک اتصال کپی شد."
-            );
-        }
+        showMessage(
+            "لینک اتصال کپی شد."
+        );
 
     } catch (error) {
 
         console.error(
-            "Copy error:",
+            "Copy failed:",
             error
         );
 
-        showError(
+        showMessage(
             "کپی لینک انجام نشد."
         );
     }
 }
 
 
-// =====================================================
-// Navigation
-// =====================================================
+// ===============================
+// Account
+// ===============================
 
-function showPage(pageName) {
+function updateAccountInfo(user) {
 
-    document
-        .querySelectorAll(".page")
-        .forEach(page => {
+    const balance =
+        document.getElementById(
+            "balance"
+        );
 
-            page.classList.add("hidden");
+    if (balance &&
+        user.balance !== undefined) {
 
-        });
-
-    const page =
-        document.getElementById(pageName);
-
-    if (page) {
-        page.classList.remove("hidden");
-    }
-
-    if (pageName === "home") {
-        loadUser();
-    }
-
-    if (pageName === "services") {
-        loadServices();
-    }
-
-    if (pageName === "orders") {
-        loadOrders();
-    }
-
-    if (pageName === "plans") {
-        loadPlans();
+        balance.textContent =
+            formatPrice(user.balance);
     }
 }
 
 
-// =====================================================
+// ===============================
 // Helpers
-// =====================================================
+// ===============================
 
 function formatPrice(value) {
 
-    return Number(value || 0)
-        .toLocaleString("fa-IR");
+    const number =
+        Number(value);
+
+    if (Number.isNaN(number)) {
+        return String(value ?? "-");
+    }
+
+    return number.toLocaleString(
+        "fa-IR"
+    );
 }
 
 
 function escapeHTML(value) {
 
-    if (value === null || value === undefined) {
-        return "";
-    }
-
-    return String(value)
+    return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -556,52 +560,46 @@ function escapeHTML(value) {
 }
 
 
-function escapeAttribute(value) {
+function showMessage(message) {
 
-    return String(value || "")
-        .replaceAll("\\", "\\\\")
-        .replaceAll("'", "\\'");
-}
-
-
-// =====================================================
-// Error
-// =====================================================
-
-function showError(message) {
-
-    console.error(message);
-
-    if (tg) {
+    if (
+        tg &&
+        typeof tg.showAlert === "function"
+    ) {
 
         tg.showAlert(
-            message || "خطایی رخ داد."
+            String(message)
         );
 
     } else {
 
         alert(
-            message || "خطایی رخ داد."
+            String(message)
         );
     }
 }
 
 
-// =====================================================
+// ===============================
 // Start
-// =====================================================
+// ===============================
 
 async function initApp() {
 
-    initTelegram();
+    if (!isTelegram) {
+
+        console.warn(
+            "Mini App خارج از Telegram باز شده است."
+        );
+
+        return;
+    }
 
     await loadUser();
 
     await loadPlans();
 
     await loadServices();
-
-    await loadOrders();
 }
 
 
