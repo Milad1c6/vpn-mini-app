@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPN Mini App</title>
+    <title>sixtyvpn</title>
 
     <link rel="stylesheet" href="style.css">
 
-    <!-- Telegram Mini Apps -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
@@ -15,6 +14,7 @@
 
 <div class="app">
 
+    <!-- HEADER -->
     <header class="header">
         <div>
             <p class="small-text">خوش آمدید</p>
@@ -25,98 +25,145 @@
     </header>
 
 
-    <section class="subscription-card">
+    <!-- HOME -->
+    <section id="homePage">
 
-        <div class="status-row">
-            <span>وضعیت سرویس</span>
-            <span class="status active">فعال</span>
-        </div>
+        <section class="subscription-card">
 
-        <h1>VPN Premium</h1>
-
-        <div class="info-grid">
-
-            <div>
-                <span>حجم باقی‌مانده</span>
-                <strong>38 GB</strong>
+            <div class="status-row">
+                <span>وضعیت سرویس</span>
+                <span class="status active" id="serviceStatus">
+                    بررسی...
+                </span>
             </div>
 
-            <div>
-                <span>روز باقی‌مانده</span>
-                <strong>21 روز</strong>
+            <h1>sixtyvpn</h1>
+
+            <div class="info-grid">
+
+                <div>
+                    <span>موجودی</span>
+                    <strong id="balance">0</strong>
+                </div>
+
+                <div>
+                    <span>سرویس فعال</span>
+                    <strong id="activeServices">0</strong>
+                </div>
+
             </div>
 
-        </div>
+            <button
+                class="main-button"
+                onclick="showConnection()">
+                دریافت اتصال
+            </button>
 
-        <button class="main-button" onclick="showConnection()">
-            دریافت اتصال
-        </button>
+        </section>
+
+
+        <h3 class="section-title">
+            خرید سرویس
+        </h3>
+
+        <section
+            class="plans"
+            id="plans">
+
+            <div class="plan">
+                <h3>در حال دریافت پلن‌ها...</h3>
+            </div>
+
+        </section>
 
     </section>
 
 
-    <h3 class="section-title">خرید سرویس</h3>
+    <!-- SERVICES -->
+    <section
+        id="servicesPage"
+        class="hidden">
 
+        <h3 class="section-title">
+            سرویس‌های من
+        </h3>
 
-    <section class="plans">
+        <section
+            class="plans"
+            id="servicesList">
 
-        <div class="plan">
-            <h3>پلن اقتصادی</h3>
-
-            <div class="plan-info">
-                <span>30 روز</span>
-                <span>30 GB</span>
+            <div class="plan">
+                <h3>در حال دریافت...</h3>
             </div>
 
-            <h2>3.99$</h2>
-
-            <button onclick="buyPlan('اقتصادی', '3.99')">
-                خرید
-            </button>
-        </div>
-
-
-        <div class="plan popular">
-
-            <div class="badge">پیشنهادی</div>
-
-            <h3>پلن حرفه‌ای</h3>
-
-            <div class="plan-info">
-                <span>30 روز</span>
-                <span>100 GB</span>
-            </div>
-
-            <h2>6.99$</h2>
-
-            <button onclick="buyPlan('حرفه‌ای', '6.99')">
-                خرید
-            </button>
-
-        </div>
-
-
-        <div class="plan">
-
-            <h3>پلن نامحدود</h3>
-
-            <div class="plan-info">
-                <span>30 روز</span>
-                <span>نامحدود</span>
-            </div>
-
-            <h2>9.99$</h2>
-
-            <button onclick="buyPlan('نامحدود', '9.99')">
-                خرید
-            </button>
-
-        </div>
+        </section>
 
     </section>
 
 
-    <section id="connectionBox" class="connection-box hidden">
+    <!-- ACCOUNT -->
+    <section
+        id="accountPage"
+        class="hidden">
+
+        <h3 class="section-title">
+            حساب کاربری
+        </h3>
+
+        <section class="plan">
+
+            <h3 id="accountName">
+                کاربر تلگرام
+            </h3>
+
+            <div class="plan-info">
+
+                <span>
+                    موجودی
+                </span>
+
+                <span id="accountBalance">
+                    0
+                </span>
+
+            </div>
+
+            <div class="plan-info">
+
+                <span>
+                    سرویس فعال
+                </span>
+
+                <span id="accountServices">
+                    0
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <h3 class="section-title">
+            سفارش‌های اخیر
+        </h3>
+
+        <section
+            class="plans"
+            id="ordersList">
+
+            <div class="plan">
+                <h3>در حال دریافت...</h3>
+            </div>
+
+        </section>
+
+    </section>
+
+
+    <!-- CONNECTION -->
+    <section
+        id="connectionBox"
+        class="connection-box hidden">
 
         <h3>اطلاعات اتصال</h3>
 
@@ -125,9 +172,11 @@
         </p>
 
         <div class="vpn-link">
+
             <span id="vpnLink">
-                vless://example-vpn-config
+                سرویس فعالی وجود ندارد
             </span>
+
         </div>
 
         <button onclick="copyVPN()">
@@ -137,21 +186,39 @@
     </section>
 
 
+    <!-- NAVIGATION -->
     <nav class="bottom-nav">
 
-        <button class="nav-item active-nav">
+        <button
+            class="nav-item active-nav"
+            id="navHome"
+            onclick="showPage('home')">
+
             <span>⌂</span>
             خانه
+
         </button>
 
-        <button class="nav-item">
+
+        <button
+            class="nav-item"
+            id="navServices"
+            onclick="showPage('services')">
+
             <span>▣</span>
             سرویس‌ها
+
         </button>
 
-        <button class="nav-item">
+
+        <button
+            class="nav-item"
+            id="navAccount"
+            onclick="showPage('account')">
+
             <span>👤</span>
             حساب
+
         </button>
 
     </nav>
