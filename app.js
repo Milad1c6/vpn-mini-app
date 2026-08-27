@@ -1,23 +1,26 @@
 const tg = window.Telegram?.WebApp;
 
-const API_URL = "http://213.176.121.102:8000";
 
-let currentUser = null;
-let currentServices = [];
-let currentPlans = [];
-let currentOrders = [];
+// =====================================================
+// API
+// =====================================================
+
+const API_URL =
+    "http://213.176.121.102:8000";
 
 
 // =====================================================
 // TELEGRAM
 // =====================================================
 
-const isTelegram =
-    !!(
+function telegramReady() {
+
+    return !!(
         tg &&
         tg.initData &&
         tg.initData.length > 0
     );
+}
 
 
 if (tg) {
@@ -27,7 +30,7 @@ if (tg) {
 
 
 // =====================================================
-// API
+// API REQUEST
 // =====================================================
 
 async function apiRequest(
@@ -35,40 +38,54 @@ async function apiRequest(
     options = {}
 ) {
 
-    if (!isTelegram) {
+    if (!telegramReady()) {
+
         throw new Error(
-            "Mini App را از داخل Telegram باز کنید."
+            "Telegram authentication data not available."
         );
     }
 
+
     const headers = {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
+        "Accept":
+            "application/json",
+
+        ...(options.headers || {}),
     };
 
+
     headers["Authorization"] =
-        `tma ${tg.initData}`;
+        "tma " + tg.initData;
 
 
-    const response = await fetch(
-        `${API_URL}${endpoint}`,
-        {
-            ...options,
-            headers
-        }
-    );
+    const response =
+        await fetch(
+            API_URL + endpoint,
+            {
+                ...options,
+                headers,
+            }
+        );
 
 
-    let data;
+    const text =
+        await response.text();
+
+
+    let data = null;
+
 
     try {
-        data = await response.json();
+        data =
+            JSON.parse(text);
     }
 
     catch {
-        throw new Error(
-            "پاسخ نامعتبر از سرور"
-        );
+        data = {
+            detail:
+                text ||
+                "Invalid server response",
+        };
     }
 
 
@@ -76,7 +93,7 @@ async function apiRequest(
 
         throw new Error(
             data.detail ||
-            "خطا در ارتباط با سرور"
+            `HTTP ${response.status}`
         );
     }
 
@@ -94,10 +111,12 @@ async function loadUser() {
     try {
 
         const data =
-            await apiRequest("/api/me");
+            await apiRequest(
+                "/api/me"
+            );
 
 
-        currentUser =
+        const user =
             data.user;
 
 
@@ -110,8 +129,8 @@ async function loadUser() {
         if (username) {
 
             username.textContent =
-                currentUser.first_name ||
-                currentUser.username ||
+                user.first_name ||
+                user.username ||
                 "کاربر تلگرام";
         }
 
@@ -124,11 +143,11 @@ async function loadUser() {
 
         if (
             avatar &&
-            currentUser.first_name
+            user.first_name
         ) {
 
             avatar.textContent =
-                currentUser.first_name
+                user.first_name
                     .charAt(0)
                     .toUpperCase();
         }
@@ -137,7 +156,7 @@ async function loadUser() {
         setText(
             "balance",
             formatPrice(
-                currentUser.balance
+                user.balance
             )
         );
 
@@ -145,15 +164,15 @@ async function loadUser() {
         setText(
             "accountBalance",
             formatPrice(
-                currentUser.balance
+                user.balance
             )
         );
 
 
         setText(
             "accountName",
-            currentUser.first_name ||
-            currentUser.username ||
+            user.first_name ||
+            user.username ||
             "کاربر تلگرام"
         );
 
@@ -175,8 +194,12 @@ async function loadUser() {
     catch (error) {
 
         console.error(
-            "USER ERROR:",
+            "User loading error:",
             error
+        );
+
+        showError(
+            error.message
         );
     }
 }
@@ -196,11 +219,9 @@ async function loadPlans() {
             );
 
 
-        currentPlans =
-            data.plans || [];
-
-
-        renderPlans();
+        renderPlans(
+            data.plans || []
+        );
 
 
     }
@@ -208,7 +229,7 @@ async function loadPlans() {
     catch (error) {
 
         console.error(
-            "PLANS ERROR:",
+            "Plans loading error:",
             error
         );
 
@@ -224,11 +245,9 @@ async function loadPlans() {
             container.innerHTML = `
                 <div class="plan">
                     <h3>خطا در دریافت پلن‌ها</h3>
-                    <p>
-                        ${escapeHTML(
-                            error.message
-                        )}
-                    </p>
+                    <p>${escapeHTML(
+                        error.message
+                    )}</p>
                 </div>
             `;
         }
@@ -240,7 +259,9 @@ async function loadPlans() {
 // RENDER PLANS
 // =====================================================
 
-function renderPlans() {
+function renderPlans(
+    plans
+) {
 
     const container =
         document.getElementById(
@@ -256,12 +277,12 @@ function renderPlans() {
     container.innerHTML = "";
 
 
-    if (!currentPlans.length) {
+    if (!plans.length) {
 
         container.innerHTML = `
             <div class="plan">
                 <h3>
-                    پلن فعالی وجود ندارد
+                    هیچ پلن فعالی وجود ندارد
                 </h3>
             </div>
         `;
@@ -270,7 +291,7 @@ function renderPlans() {
     }
 
 
-    currentPlans.forEach(
+    plans.forEach(
         (plan, index) => {
 
             const card =
@@ -285,17 +306,15 @@ function renderPlans() {
                     : "plan";
 
 
-            const badge =
-                index === 1
-                    ? `<div class="badge">
-                         پیشنهادی
-                       </div>`
-                    : "";
-
-
             card.innerHTML = `
 
-                ${badge}
+                ${
+                    index === 1
+                        ? `<div class="badge">
+                               پیشنهادی
+                           </div>`
+                        : ""
+                }
 
                 <h3>
                     ${escapeHTML(
@@ -313,10 +332,9 @@ function renderPlans() {
                         ${
                             Number(
                                 plan.data_gb
-                            ) > 0
-                                ? plan.data_gb +
-                                  " GB"
-                                : "نامحدود"
+                            ) === 0
+                                ? "نامحدود"
+                                : `${plan.data_gb} GB`
                         }
                     </span>
 
@@ -340,14 +358,19 @@ function renderPlans() {
                 );
 
 
-            button.onclick =
-                () => buyPlan(plan);
+            button.addEventListener(
+                "click",
+                function () {
+
+                    buyPlan(plan);
+
+                }
+            );
 
 
             container.appendChild(
                 card
             );
-
         }
     );
 }
@@ -357,96 +380,29 @@ function renderPlans() {
 // BUY
 // =====================================================
 
-function buyPlan(plan) {
+function buyPlan(
+    plan
+) {
 
-    const name =
-        plan.name || "پلن";
+    const message =
+        `پلن ${plan.name}\n` +
+        `قیمت: ${formatPrice(plan.price)}\n\n` +
+        `برای خرید از طریق ربات ادامه دهید.`;
 
 
-    const price =
-        formatPrice(plan.price);
+    if (
+        tg &&
+        typeof tg.showAlert ===
+        "function"
+    ) {
 
-
-    const confirmed =
-        window.confirm(
-            `پلن ${name}\n` +
-            `قیمت: ${price}\n\n` +
-            `ادامه خرید؟`
+        tg.showAlert(
+            message
         );
 
+    } else {
 
-    if (!confirmed) {
-        return;
-    }
-
-
-    createOrder(plan);
-}
-
-
-// =====================================================
-// CREATE ORDER
-// =====================================================
-
-async function createOrder(plan) {
-
-    try {
-
-        const data =
-            await apiRequest(
-                "/api/orders",
-                {
-                    method: "POST",
-
-                    body:
-                        JSON.stringify({
-                            plan_id: plan.id
-                        })
-                }
-            );
-
-
-        if (data.payment_url) {
-
-            window.location.href =
-                data.payment_url;
-
-            return;
-        }
-
-
-        if (data.url) {
-
-            window.location.href =
-                data.url;
-
-            return;
-        }
-
-
-        showMessage(
-            data.message ||
-            "سفارش ثبت شد."
-        );
-
-
-        await loadUser();
-        await loadServices();
-        await loadOrders();
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "ORDER ERROR:",
-            error
-        );
-
-
-        showMessage(
-            error.message
-        );
+        alert(message);
     }
 }
 
@@ -465,25 +421,8 @@ async function loadServices() {
             );
 
 
-        currentServices =
-            data.services || [];
-
-
-        renderServices();
-
-
-        updateConnection();
-
-
-        setText(
-            "activeServices",
-            currentServices.length
-        );
-
-
-        setText(
-            "accountServices",
-            currentServices.length
+        renderServices(
+            data.services || []
         );
 
 
@@ -492,7 +431,7 @@ async function loadServices() {
     catch (error) {
 
         console.error(
-            "SERVICES ERROR:",
+            "Services loading error:",
             error
         );
     }
@@ -503,7 +442,9 @@ async function loadServices() {
 // RENDER SERVICES
 // =====================================================
 
-function renderServices() {
+function renderServices(
+    services
+) {
 
     const container =
         document.getElementById(
@@ -519,7 +460,7 @@ function renderServices() {
     container.innerHTML = "";
 
 
-    if (!currentServices.length) {
+    if (!services.length) {
 
         container.innerHTML = `
             <div class="plan">
@@ -529,25 +470,12 @@ function renderServices() {
             </div>
         `;
 
-
-        setText(
-            "serviceStatus",
-            "غیرفعال"
-        );
-
-
         return;
     }
 
 
-    setText(
-        "serviceStatus",
-        "فعال"
-    );
-
-
-    currentServices.forEach(
-        (service) => {
+    services.forEach(
+        service => {
 
             const card =
                 document.createElement(
@@ -569,8 +497,7 @@ function renderServices() {
 
                     <span>
                         ${escapeHTML(
-                            service.username ||
-                            "-"
+                            service.username
                         )}
                     </span>
 
@@ -582,27 +509,46 @@ function renderServices() {
             `;
 
 
-            const button =
-                card.querySelector(
-                    "button"
-                );
-
-
-            button.onclick =
+            card.querySelector(
+                "button"
+            ).addEventListener(
+                "click",
                 () => {
 
                     copyText(
                         service.subscription_url
                     );
-                };
+
+                }
+            );
 
 
             container.appendChild(
                 card
             );
-
         }
     );
+
+
+    if (services.length > 0) {
+
+        const first =
+            services[0];
+
+
+        const link =
+            document.getElementById(
+                "vpnLink"
+            );
+
+
+        if (link) {
+
+            link.textContent =
+                first.subscription_url ||
+                "لینک موجود نیست";
+        }
+    }
 }
 
 
@@ -626,13 +572,14 @@ function showConnection() {
     box.classList.toggle(
         "hidden"
     );
-
-
-    updateConnection();
 }
 
 
-function updateConnection() {
+// =====================================================
+// COPY VPN
+// =====================================================
+
+async function copyVPN() {
 
     const element =
         document.getElementById(
@@ -645,57 +592,27 @@ function updateConnection() {
     }
 
 
-    if (!currentServices.length) {
-
-        element.textContent =
-            "سرویس فعالی وجود ندارد";
-
-        return;
-    }
-
-
-    const service =
-        currentServices[0];
-
-
-    element.textContent =
-        service.subscription_url ||
-        "لینک اتصال موجود نیست";
-}
-
-
-// =====================================================
-// COPY VPN
-// =====================================================
-
-async function copyVPN() {
-
-    if (!currentServices.length) {
-
-        showMessage(
-            "سرویس فعالی ندارید."
-        );
-
-        return;
-    }
-
-
     const link =
-        currentServices[0]
-            .subscription_url;
+        element.textContent.trim();
 
 
-    if (!link) {
+    if (
+        !link ||
+        link ===
+        "سرویس فعالی وجود ندارد"
+    ) {
 
-        showMessage(
-            "لینک اتصال موجود نیست."
+        showError(
+            "لینک سرویس وجود ندارد."
         );
 
         return;
     }
 
 
-    await copyText(link);
+    await copyText(
+        link
+    );
 }
 
 
@@ -703,17 +620,9 @@ async function copyVPN() {
 // COPY
 // =====================================================
 
-async function copyText(text) {
-
-    if (!text) {
-
-        showMessage(
-            "لینکی وجود ندارد."
-        );
-
-        return;
-    }
-
+async function copyText(
+    text
+) {
 
     try {
 
@@ -721,15 +630,33 @@ async function copyText(text) {
             .writeText(text);
 
 
-        showMessage(
-            "لینک کپی شد."
-        );
+        if (
+            tg &&
+            typeof tg.showAlert ===
+            "function"
+        ) {
+
+            tg.showAlert(
+                "لینک کپی شد."
+            );
+
+        } else {
+
+            alert(
+                "لینک کپی شد."
+            );
+        }
 
     }
 
-    catch {
+    catch (error) {
 
-        showMessage(
+        console.error(
+            "Copy error:",
+            error
+        );
+
+        showError(
             "کپی لینک انجام نشد."
         );
     }
@@ -750,18 +677,17 @@ async function loadOrders() {
             );
 
 
-        currentOrders =
-            data.orders || [];
+        renderOrders(
+            data.orders || []
+        );
 
-
-        renderOrders();
 
     }
 
     catch (error) {
 
         console.error(
-            "ORDERS ERROR:",
+            "Orders loading error:",
             error
         );
     }
@@ -772,7 +698,9 @@ async function loadOrders() {
 // RENDER ORDERS
 // =====================================================
 
-function renderOrders() {
+function renderOrders(
+    orders
+) {
 
     const container =
         document.getElementById(
@@ -788,7 +716,7 @@ function renderOrders() {
     container.innerHTML = "";
 
 
-    if (!currentOrders.length) {
+    if (!orders.length) {
 
         container.innerHTML = `
             <div class="plan">
@@ -802,7 +730,7 @@ function renderOrders() {
     }
 
 
-    currentOrders.forEach(
+    orders.forEach(
         order => {
 
             const card =
@@ -819,8 +747,7 @@ function renderOrders() {
 
                 <h3>
                     ${escapeHTML(
-                        order.plan_name ||
-                        "سفارش"
+                        order.plan_name
                     )}
                 </h3>
 
@@ -834,13 +761,11 @@ function renderOrders() {
 
                     <span>
                         ${escapeHTML(
-                            order.status ||
-                            "-"
+                            order.status
                         )}
                     </span>
 
                 </div>
-
             `;
 
 
@@ -856,7 +781,9 @@ function renderOrders() {
 // NAVIGATION
 // =====================================================
 
-async function showPage(page) {
+async function showPage(
+    page
+) {
 
     const home =
         document.getElementById(
@@ -874,31 +801,49 @@ async function showPage(page) {
         );
 
 
-    home.classList.add(
+    home?.classList.add(
         "hidden"
     );
 
-    services.classList.add(
+    services?.classList.add(
         "hidden"
     );
 
-    account.classList.add(
+    account?.classList.add(
         "hidden"
     );
 
 
-    removeActiveNav();
+    document
+        .querySelectorAll(
+            ".nav-item"
+        )
+        .forEach(
+            item => {
+
+                item.classList.remove(
+                    "active-nav"
+                );
+
+            }
+        );
 
 
     if (page === "home") {
 
-        home.classList.remove(
+        home?.classList.remove(
             "hidden"
         );
 
-        setActiveNav(
-            "navHome"
-        );
+
+        document
+            .getElementById(
+                "navHome"
+            )
+            ?.classList.add(
+                "active-nav"
+            );
+
 
         await loadUser();
         await loadPlans();
@@ -910,13 +855,19 @@ async function showPage(page) {
 
     if (page === "services") {
 
-        services.classList.remove(
+        services?.classList.remove(
             "hidden"
         );
 
-        setActiveNav(
-            "navServices"
-        );
+
+        document
+            .getElementById(
+                "navServices"
+            )
+            ?.classList.add(
+                "active-nav"
+            );
+
 
         await loadServices();
 
@@ -926,54 +877,24 @@ async function showPage(page) {
 
     if (page === "account") {
 
-        account.classList.remove(
+        account?.classList.remove(
             "hidden"
         );
 
-        setActiveNav(
-            "navAccount"
-        );
+
+        document
+            .getElementById(
+                "navAccount"
+            )
+            ?.classList.add(
+                "active-nav"
+            );
+
 
         await loadUser();
         await loadOrders();
 
         return;
-    }
-}
-
-
-// =====================================================
-// NAV HELPERS
-// =====================================================
-
-function removeActiveNav() {
-
-    document
-        .querySelectorAll(
-            ".nav-item"
-        )
-        .forEach(
-            button => {
-
-                button.classList.remove(
-                    "active-nav"
-                );
-            }
-        );
-}
-
-
-function setActiveNav(id) {
-
-    const button =
-        document.getElementById(id);
-
-
-    if (button) {
-
-        button.classList.add(
-            "active-nav"
-        );
     }
 }
 
@@ -988,7 +909,9 @@ function setText(
 ) {
 
     const element =
-        document.getElementById(id);
+        document.getElementById(
+            id
+        );
 
 
     if (element) {
@@ -999,7 +922,9 @@ function setText(
 }
 
 
-function formatPrice(value) {
+function formatPrice(
+    value
+) {
 
     const number =
         Number(value);
@@ -1021,7 +946,9 @@ function formatPrice(value) {
 }
 
 
-function escapeHTML(value) {
+function escapeHTML(
+    value
+) {
 
     return String(
         value ?? ""
@@ -1049,7 +976,14 @@ function escapeHTML(value) {
 }
 
 
-function showMessage(message) {
+function showError(
+    message
+) {
+
+    console.error(
+        message
+    );
+
 
     if (
         tg &&
@@ -1063,7 +997,7 @@ function showMessage(message) {
 
     } else {
 
-        window.alert(
+        console.error(
             String(message)
         );
     }
@@ -1076,10 +1010,10 @@ function showMessage(message) {
 
 async function initApp() {
 
-    if (!isTelegram) {
+    if (!telegramReady()) {
 
-        console.warn(
-            "Mini App باید از داخل Telegram اجرا شود."
+        console.error(
+            "Telegram initData is missing."
         );
 
         return;
